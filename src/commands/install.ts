@@ -136,7 +136,7 @@ export function builder(yargs: Argv<InstallArgv>): Argv {
       type: 'boolean',
       alias: 'y',
       description: 'Skip confirmation prompt',
-      default: false,
+      default: true,
     })
     .option('header', {
       type: 'array',
