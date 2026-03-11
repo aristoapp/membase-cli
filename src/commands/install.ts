@@ -10,7 +10,9 @@ import {
   setNestedValue,
   type ClientConfig,
 } from '../client-config'
-import { spawn } from 'node:child_process'
+import spawn from 'cross-spawn'
+
+const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 
 // ── Membase defaults ────────────────────────────────────────────────
 const DEFAULT_URL = 'https://mcp.membase.so/mcp'
@@ -57,7 +59,7 @@ function setServerConfig(
       }
     } else if (client === 'opencode') {
       // OpenCode has a different config structure for MCP servers
-      if (serverConfig.command === 'npx' && serverConfig.args?.includes('mcp-remote@latest')) {
+      if ((serverConfig.command === 'npx' || serverConfig.command === 'npx.cmd') && serverConfig.args?.includes('mcp-remote@latest')) {
         // For remote MCP servers, OpenCode uses a different structure
         const urlIndex = serverConfig.args.indexOf('mcp-remote@latest') + 1
         const url = serverConfig.args[urlIndex]
@@ -221,14 +223,11 @@ function parseEnvVars(envArray?: Array<string>): { [key: string]: string } | und
   return Object.keys(envObj).length > 0 ? envObj : undefined
 }
 
-// Run the authentication flow for remote servers before installation.
-// FIX: Added { shell: true } to spawn — Windows requires this to resolve .cmd files (npx.cmd)
 async function runAuthentication(url: string): Promise<void> {
   logger.info(`Running authentication for ${url}`)
   return new Promise((resolve, reject) => {
-    const child = spawn('npx', ['-y', '-p', 'mcp-remote@latest', 'mcp-remote-client', url], {
+    const child = spawn(npxCmd, ['-y', '-p', 'mcp-remote@latest', 'mcp-remote-client', url], {
       stdio: ['ignore', 'ignore', 'ignore'],
-      shell: true, // Required for Windows: resolves .cmd wrappers like npx.cmd
     })
 
     child.on('close', (code) => {
@@ -282,7 +281,7 @@ export async function handler(argv: ArgumentsCamelCase<InstallArgv>) {
       JSON.stringify(
         {
           [name]: {
-            command: isUrl(target) ? 'npx' : command.split(' ')[0],
+            command: isUrl(target) ? npxCmd : command.split(' ')[0],
             args: warpArgs,
             env: envVars || {},
             working_directory: null,
@@ -354,7 +353,7 @@ export async function handler(argv: ArgumentsCamelCase<InstallArgv>) {
           }
         }
         const serverConfig: ClientConfig = {
-          command: 'npx',
+          command: npxCmd,
           args: args,
         }
         if (envVars) {
@@ -365,7 +364,7 @@ export async function handler(argv: ArgumentsCamelCase<InstallArgv>) {
         // Command-based installation (including simple package names)
         const cmdParts = command.split(' ')
         const serverConfig: ClientConfig = {
-          command: cmdParts[0],
+          command: cmdParts[0] === 'npx' ? npxCmd : cmdParts[0],
           args: cmdParts.slice(1),
         }
         if (envVars) {
