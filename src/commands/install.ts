@@ -11,6 +11,7 @@ import {
   type ClientConfig,
 } from '../client-config'
 import spawn from 'cross-spawn'
+import { maybePromptGithubStar } from '../star-prompt'
 
 const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 
@@ -377,6 +378,11 @@ export async function handler(argv: ArgumentsCamelCase<InstallArgv>) {
       logger.box(
         green(`Successfully installed MCP server "${name}" in ${client}${argv.local ? ' (locally)' : ''}`),
       )
+      await maybePromptGithubStar({
+        logFn: (msg) => logger.log(msg),
+        warnFn: (msg) => logger.warn(msg),
+      })
+      logger.log('')
     } catch (e) {
       logger.error(red((e as Error).message))
     }
