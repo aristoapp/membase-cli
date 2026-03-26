@@ -11,6 +11,8 @@ import {
   type ClientConfig,
 } from '../client-config'
 import spawn from 'cross-spawn'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { maybePromptGithubStar } from '../star-prompt'
 
 const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx'
@@ -243,6 +245,49 @@ async function runAuthentication(url: string): Promise<void> {
   })
 }
 
+// ── AGENTS.md injection ──────────────────────────────────────────────
+
+const MEMBASE_MARKER_START = '<!-- MEMBASE:START -->'
+const MEMBASE_MARKER_END = '<!-- MEMBASE:END -->'
+
+const AGENTS_BLOCK = `${MEMBASE_MARKER_START}
+## Membase Memory
+
+You have access to Membase long-term memory via MCP.
+
+**Rules:**
+1) For user-specific context questions, call search_memory before answering.
+2) Use resources strategically: read membase://profile for stable user settings and read membase://recent for latest-context questions or after resource update notifications.
+3) When durable user context is learned, call add_memory without asking for permission first.
+4) Never store secrets (passwords, tokens, API keys, OTPs).
+5) Do not store transient one-off states unless the user explicitly asks.
+6) Membase syncs with user's Google Calendar and Gmail. Use search_memory to answer questions about their schedule, meetings, or emails.
+${MEMBASE_MARKER_END}`
+
+function injectAgentsGuide(): void {
+  const agentsPath = join(process.cwd(), 'AGENTS.md')
+
+  if (existsSync(agentsPath)) {
+    const existing = readFileSync(agentsPath, 'utf-8')
+
+    if (existing.includes(MEMBASE_MARKER_START)) {
+      const updated = existing.replace(
+        new RegExp(`${MEMBASE_MARKER_START}[\\s\\S]*?${MEMBASE_MARKER_END}`),
+        AGENTS_BLOCK,
+      )
+      writeFileSync(agentsPath, updated, 'utf-8')
+      logger.log(green('  ✓ Updated Membase section in AGENTS.md'))
+    } else {
+      const separator = existing.endsWith('\n') ? '\n' : '\n\n'
+      writeFileSync(agentsPath, `${existing}${separator}${AGENTS_BLOCK}\n`, 'utf-8')
+      logger.log(green('  ✓ Added Membase section to AGENTS.md'))
+    }
+  } else {
+    writeFileSync(agentsPath, `${AGENTS_BLOCK}\n`, 'utf-8')
+    logger.log(green('  ✓ Created AGENTS.md with Membase section'))
+  }
+}
+
 export async function handler(argv: ArgumentsCamelCase<InstallArgv>) {
   let client = argv.client
 
@@ -378,6 +423,7 @@ export async function handler(argv: ArgumentsCamelCase<InstallArgv>) {
       logger.box(
         green(`Successfully installed MCP server "${name}" in ${client}${argv.local ? ' (locally)' : ''}`),
       )
+      injectAgentsGuide()
       await maybePromptGithubStar({
         logFn: (msg) => logger.log(msg),
         warnFn: (msg) => logger.warn(msg),
