@@ -262,6 +262,10 @@ You have access to Membase long-term memory via MCP.
 4) Never store secrets (passwords, tokens, API keys, OTPs).
 5) Do not store transient one-off states unless the user explicitly asks.
 6) Membase syncs with user's Google Calendar and Gmail. Use search_memory to answer questions about their schedule, meetings, or emails.
+7) search_memory supports an optional 'sources' filter to narrow results by origin: use 'slack' for Slack threads, 'gmail' for emails, 'google-calendar' for calendar events. Example: sources=['slack'] when the user asks about Slack conversations.
+8) search_memory also supports an optional 'project' filter. Use it only when the user explicitly asks to scope search by a project/category (exact project slug match).
+9) When the user explicitly mentions a project name, tag, label, or category for a memory, pass it as the 'project' parameter to add_memory. Do NOT infer or guess a project - leave it empty when not specified.
+10) For relative time windows in search_memory (today, yesterday, this week, last month), set date_from/date_to in ISO 8601. Call get_current_date first when needed to anchor relative dates.
 ${MEMBASE_MARKER_END}`
 
 function injectAgentsGuide(): void {
