@@ -1,6 +1,6 @@
 {
   "name": "membase",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "CLI tool to install Membase MCP server for AI clients (Cursor, VS Code, Claude, etc.)",
   "bin": {
     "membase": "./bin/run"

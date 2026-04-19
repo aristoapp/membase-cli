@@ -266,6 +266,9 @@ You have access to Membase long-term memory via MCP.
 8) search_memory also supports an optional 'project' filter. Use it only when the user explicitly asks to scope search by a project/category (exact project slug match).
 9) When the user explicitly mentions a project name, tag, label, or category for a memory, pass it as the 'project' parameter to add_memory. Do NOT infer or guess a project - leave it empty when not specified.
 10) For relative time windows in search_memory (today, yesterday, this week, last month), set date_from/date_to in ISO 8601. Call get_current_date first when needed to anchor relative dates.
+11) search_memory returns personal context (preferences, habits, decisions). search_wiki returns factual knowledge (documents, references, stable facts). IMPORTANT: For any user question, ALWAYS call both tools in order: 1) search_memory first, 2) then search_wiki. Combine results for comprehensive answers.
+12) Use add_wiki to store knowledge, references, and documents. Use add_memory for personal context.
+13) Wiki CRUD tools: add_wiki, update_wiki, delete_wiki for managing knowledge documents.
 ${MEMBASE_MARKER_END}`
 
 function injectAgentsGuide(): void {
